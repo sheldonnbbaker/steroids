@@ -119,7 +119,7 @@ steroids.config.tabBar.tabs = [
 
 Tab bar color settings are application-wide and cannot be changed during runtime. Colors are defined as 6-character RGB hex strings with a leading #.
 
-{% highlight coffeescript %} 
+{% highlight coffeescript %}
 # Sets the tint of the whole tab bar
 steroids.config.tabBar.tintColor = "#00aeef"
 # Sets the title text color of a tab
@@ -213,6 +213,17 @@ Sets the editor command that is used in the Steroids console (i.e. `steroids con
 {% highlight coffeescript %}
 steroids.config.editor.cmd = "subl"
 steroids.config.editor.args = ["."]
+{% endhighlight %}
+
+## steroids.config.watch
+
+*steroids.config.watch.exclude default:* `[]`
+
+Sets the exclusion for monitoring files/directories when running steroids with command line argument `--watch`.
+It is also possible to exclude files using `--watchExclude path1,path2,path3` directly from the command line.
+
+{% highlight coffeescript %}
+steroids.config.watch.exclude = ["www/myfile.js", "www/mydirectory"]
 {% endhighlight %}
 
 ##steroids.config.hooks
