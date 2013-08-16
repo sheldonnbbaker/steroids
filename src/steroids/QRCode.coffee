@@ -8,7 +8,7 @@ class QRCode
   show: (options={})=>
     return if process.env.STEROIDS_TEST_RUN
     if options.showTestContent? and options.showTestContent
-      open "http://localhost:#{@options.port}/__appgyver/connect/qrcode.html?qrCodeData=#{encodeURIComponent(@options.data)}&test=true"
+      open "http://localhost:#{@options.port}/__appgyver/connect/qrcode_test.html?qrCodeData=#{encodeURIComponent(@options.data)}"
     else
       open "http://localhost:#{@options.port}/__appgyver/connect/qrcode.html?qrCodeData=#{encodeURIComponent(@options.data)}"
 
