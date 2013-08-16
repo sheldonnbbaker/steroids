@@ -234,18 +234,16 @@ class Steroids
           deviceType: argv.deviceType
 
       when "test"
-        updater = new Updater
-        updater.check
-          from: "test"
-
         # steroids test karma
         if otherOptions[0] is "karma"
+
           karma = new Karma()
-          if argv._[2]
+
+          if otherOptions[1] is "init"
             karma.init()
             process.exit(1)
-          else
-            process.exit(1) unless karma.configExists()
+
+          karma.ensureConfigExists()
 
           @port = if argv.port
             argv.port
@@ -273,7 +271,7 @@ class Steroids
 
                     # get karma port
                     require(paths.test.karma.configFilePath)(
-                      set: (config)->
+                      set: (config)=>
                         @karmaPort = config.port
                       LOG_INFO: ""
                     )
@@ -288,6 +286,7 @@ class Steroids
                     unless argv.qrcode?
                       QRCode = require "./steroids/QRCode"
                       QRCode.showLocal
+                        showTestContent: true
                         port: @port
 
                     karma.start
@@ -298,9 +297,6 @@ class Steroids
                         process.exit(1)
 
                     if argv.simulator
-                      if argv.type
-                        Help.legacy.simulatorType()
-                        process.exit(1)
 
                       steroidsCli.simulator.run
                         deviceType: argv.deviceType
@@ -308,17 +304,32 @@ class Steroids
                         stderr: false
 
 
-
+        # steroids test appium <file>
         else if otherOptions[0] is "appium"
+
+          unless otherOptions[1]?
+            Help.usage()
+            process.exit(1)
+
+          # always use 4567 because appium tests can only be run in simulator
+          @port = "4567"
+
+          # check that steroids connect is running
+          portscanner = require "portscanner"
+
+          portscanner.checkPortStatus @port, 'localhost', (error, status) =>
+            if status == "closed"
+              console.log "Error: steroids connect is not running in port #{@port}. Please run 'steroids connect' in default port (#{@port}) to run appium tests."
+              process.exit(1)
 
           appium = new Appium()
 
-          if !otherOptions[1]?
-            Help.usage()
-          else if otherOptions[1] is "init"
+          if otherOptions[1] is "init"
             appium.init()
             process.exit(1)
+
           else
+            testFilePath = otherOptions[1]
             debug = if argv.debug? then argv.debug else false
 
             project = new Project
@@ -330,11 +341,12 @@ class Steroids
                 appium.start
                   debug: debug
                   onExit: ()->
-                    steroidsCli.simulator.killall()
+                    if argv.exitSimulator
+                      steroidsCli.simulator.killall()
                     process.exit(1)
                 # run test
                 appium.runTest
-                  file: otherOptions[1]
+                  file: testFilePath
         else
           Help.usage()
           process.exit(1)
