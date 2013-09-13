@@ -13,7 +13,7 @@ class QRCode
     else
       "http://127.0.0.1:#{@options.port}/__appgyver/connect/qrcode.html?qrCodeData=#{encodeURIComponent(@options.data)}"
 
-	open url
+    open url
     steroidsCli.debug "Opening URL #{url} in default web browser..."
 
   @showLocal: (options={}) =>
