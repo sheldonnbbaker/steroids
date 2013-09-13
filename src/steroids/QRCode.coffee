@@ -7,10 +7,14 @@ class QRCode
 
   show: (options={})=>
     return if process.env.STEROIDS_TEST_RUN
-    if options.showTestContent? and options.showTestContent
-      open "http://localhost:#{@options.port}/__appgyver/connect/qrcode_test.html?qrCodeData=#{encodeURIComponent(@options.data)}"
+
+    url = if options.showTestContent? and options.showTestContent
+      "http://127.0.0.1:#{@options.port}/__appgyver/connect/qrcode_test.html?qrCodeData=#{encodeURIComponent(@options.data)}"
     else
-      open "http://localhost:#{@options.port}/__appgyver/connect/qrcode.html?qrCodeData=#{encodeURIComponent(@options.data)}"
+      "http://127.0.0.1:#{@options.port}/__appgyver/connect/qrcode.html?qrCodeData=#{encodeURIComponent(@options.data)}"
+
+	open url
+    steroidsCli.debug "Opening URL #{url}" in default web browser..."
 
   @showLocal: (options={}) =>
     interfaces = steroidsCli.server.interfaces()
