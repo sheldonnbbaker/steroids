@@ -19,6 +19,12 @@
 
       Sets the port for connecting devices.
 
+    #cyan[--ripple]
+
+      Opens Ripple Emulator
+
+      #cyan[--ripplePort=4400] can be used to specify port for the Ripple Emulator
+
     #cyan[--no-qrcode]
 
       Do not open the QR code in a separate browser window.
@@ -63,11 +69,15 @@
 
   #bold[simulator] #cyan[--deviceType=<deviceType>]
 
-    Launches iOS Simulator (default device: non-retina iPhone), requires Xcode.
+    Launches iOS Simulator or Tizen Web Simulator (default device: non-retina iPhone), requires Xcode.
 
-    Valid values for deviceType: #cyan[iphone, ipad, ipad_retina, iphone_retina_3_5_inch or iphone_retina_4_inch]
+    Valid values for deviceType: #cyan[iphone, ipad, ipad_retina, iphone_retina_3_5_inch or iphone_retina_4_inch] or #cyan[tizenweb]
 
     Optionally, append #cyan['@<iOS-version>'] to launch the simulator with a specific iOS version (assuming it is installed); e.g. #cyan['iphone@5.1']
+
+    #cyan[--port=4300]
+
+      Starts the Tizen Web Simulator in the given port.
 
   #bold[weinre] #cyan[--port=31173]
 
@@ -100,3 +110,18 @@
   #bold[deploy]
 
     Deploys your application to AppGyver Cloud.
+
+  #bold[test] #cyan[TYPE] #cyan[arguments]
+
+    Test types:
+      #cyan[karma]
+        Use Karma to run unit tests. Spec files are listed in the Karma configuration file (test/karma.coffee).
+
+        #cyan[init]
+          Create an initial configuration file and example spec for Karma in folder test/
+
+        Additional arguments for #cyan[karma] are:
+          #cyan[--simulator]
+          #cyan[--deviceType]=<type>
+          #cyan[--no-qrcode]
+          #cyan[--port]

@@ -60,7 +60,9 @@ class Paths
   @application.configs =
     application: path.join @application.configDir, "application.coffee"
     cloud: path.join @application.configDir, "cloud.json"
-    bower: path.join @application.configDir, "bower.json"
+    bower: path.join @applicationDir, "bower.json"
+    legacy:
+      bower: path.join @application.configDir, "bower.json"
 
   @application.sources =
     controllerDir: path.join @application.appDir, "controllers"
@@ -88,5 +90,19 @@ class Paths
   @userHome: if process.platform == 'win32' then process.env.USERPROFILE else process.env.HOME
   @storedSettings: path.join @userHome, ".appgyver"
   @oauthTokenPath: path.join @storedSettings, "token.json"
+
+  @rippleBinary: path.join @npm, "node_modules", "ripple-emulator", "bin", "ripple"
+
+  @test:
+    basePath: path.join @applicationDir, "test"
+    unitTestPath: path.join @applicationDir, "test", "unit"
+    functionalTestPath: path.join @applicationDir, "test", "functional"
+
+  @test.karma =
+    binaryPath: path.join @npm, "node_modules", "karma", "bin", "karma"
+    configFilePath: path.join @test.basePath, "karma.coffee"
+    templates:
+      configPath: path.join @npm, "templates", "tests", "karma", "karma.coffee"
+      exampleSpecPath: path.join @npm, "templates", "tests", "karma", "spec", "exampleSpec.coffee"
 
 module.exports = Paths

@@ -1,15 +1,21 @@
 Help = require "./steroids/Help"
 Weinre = require "./steroids/Weinre"
 Simulator = require "./steroids/Simulator"
+TizenWebSimulator = require "./steroids/TizenWebSimulator"
+
 Project = require "./steroids/Project"
 Updater = require "./steroids/Updater"
 SafariDebug = require "./steroids/SafariDebug"
 Serve = require "./steroids/Serve"
 Server = require "./steroids/Server"
+Ripple = require "./steroids/Ripple"
+PortChecker = require "./steroids/PortChecker"
 
 util = require "util"
 Version = require "./steroids/Version"
 paths = require "./steroids/paths"
+
+Karma = require "./steroids/Karma"
 
 argv = require('optimist').argv
 open = require "open"
@@ -30,6 +36,7 @@ class Steroids
     @version = new Version
     @pathToSelf = process.argv[1]
     @config = new Config
+    @platform = @options.argv.platform || "ios"
 
   readApplicationConfig: ->
     applicationConfig = paths.application.configs.application
@@ -41,29 +48,6 @@ class Steroids
 
   detectSteroidsProject: ->
     return fs.existsSync(paths.application.configDir) and fs.existsSync(paths.application.wwwDir)
-
-  detectLegacyProject: ->
-    contents = @readApplicationConfig()
-    return unless contents
-
-    if contents.match('Steroids = require "steroids"') or contents.match('module.exports = Steroids.config')
-      Help.legacy.requiresDetected()
-      process.exit(1)
-
-    if contents.match('Steroids.config')
-      Help.legacy.capitalizationDetected()
-      process.exit(1)
-
-  detectLegacyBowerJSON: ->
-    fs = require("fs")
-
-    bowerConfig = paths.application.configs.bower
-
-    if fs.existsSync(bowerConfig)
-      contents = fs.readFileSync(bowerConfig).toString()
-      if contents.match('steroids-js.git#0.3.5') or contents.match('steroids-js.git#0.3.6')
-        Help.legacy.specificSteroidsJSDetected()
-        process.exit(1)
 
   debug: (options = {}) =>
     return unless steroidsCli.options.debug
@@ -77,7 +61,7 @@ class Steroids
 
 
   ensureProjectIfNeededFor: (command, otherOptions) ->
-    if command in ["push", "make", "package", "grunt", "debug", "simulator", "connect", "update", "generate", "deploy"]
+    if command in ["push", "make", "package", "grunt", "debug", "simulator", "connect", "update", "generate", "deploy", "test"]
 
       return if @detectSteroidsProject()
       return if command == "generate" and otherOptions.length == 0    # displays usage
@@ -89,9 +73,6 @@ class Steroids
       process.exit(1)
 
   execute: =>
-    @detectLegacyProject()
-    @detectLegacyBowerJSON()
-
     [firstOption, otherOptions...] = argv._
 
     if argv.version
@@ -227,9 +208,39 @@ class Steroids
           Help.legacy.simulatorType()
           process.exit(1)
 
-        steroidsCli.simulator.run
-          deviceType: argv.deviceType
+        if argv.deviceType == "tizenweb"
+          steroidsCli.platform = "tizen"
 
+          servePort = if argv.port
+            argv.port
+          else
+            4300
+
+          tizenWebSimulator = new TizenWebSimulator servePort
+          tizenWebSimulator.run()
+
+          serve = new Serve servePort
+          serve.start()
+
+        else
+          steroidsCli.simulator.run
+            deviceType: argv.deviceType
+
+      when "test"
+
+        # steroids test karma
+        if otherOptions[0] is "karma"
+          karma = new Karma
+            firstOption: otherOptions[1]
+            webServerPort: argv.port
+            qrcode: argv.qrcode
+            simulator:
+              use: argv.simulator
+              deviceType: argv.deviceType
+
+        else
+          Help.usage()
+          process.exit(1)
 
       when "connect"
         updater = new Updater
@@ -247,107 +258,118 @@ class Steroids
           else
             4000
 
-          serve = new Serve(servePort)
+          if argv.ripple
+            ripple = new Ripple
+              servePort: servePort
+              port: argv.ripplePort
+
+            ripple.run()
+
+          serve = new Serve servePort,
+            ripple: argv.ripple
+            ripplePort: argv.ripplePort
+            platform: argv.platform
+
           serve.start()
 
-
-        portscanner = require "portscanner"
-
-        portscanner.checkPortStatus @port, 'localhost', (error, status) =>
-          unless status == "closed"
+        checker = new PortChecker
+          port: @port
+          autorun: true
+          onOpen: ()=>
             console.log "Error: port #{@port} is already in use. Make sure there is no other program or that 'steroids connect' is not running on this port."
             process.exit(1)
 
-          project = new Project
-          project.push
-            onFailure: =>
-              steroidsCli.debug "Cannot continue starting server, the push failed."
-            onSuccess: =>
-              BuildServer = require "./steroids/servers/BuildServer"
+          onClosed: ()=>
+            project = new Project
+            project.push
+              onFailure: =>
+                steroidsCli.debug "Cannot continue starting server, the push failed."
+              onSuccess: =>
+                BuildServer = require "./steroids/servers/BuildServer"
 
-              Prompt = require("./steroids/Prompt")
-              prompt = new Prompt
-                context: @
+                Prompt = require("./steroids/Prompt")
+                prompt = new Prompt
+                  context: @
 
-              server = Server.start
-                port: @port
-                callback: ()=>
-                  global.steroidsCli.server = server
+                server = Server.start
+                  port: @port
+                  callback: ()=>
+                    global.steroidsCli.server = server
 
-                  buildServer = new BuildServer
-                                      path: "/"
-                                      port: @port
+                    buildServer = new BuildServer
+                                        path: "/"
+                                        port: @port
 
-                  server.mount(buildServer)
+                    server.mount(buildServer)
 
-                  unless argv.qrcode?
-                    QRCode = require "./steroids/QRCode"
-                    QRCode.showLocal
-                      port: @port
+                    unless argv.qrcode is false
+                      QRCode = require "./steroids/QRCode"
+                      QRCode.showLocal
+                        port: @port
 
-                    util.log "Waiting for the client to connect, scan the QR code visible in your browser ..."
+                      util.log "Waiting for the client to connect, scan the QR code visible in your browser ..."
 
-                  setInterval () ->
-                    activeClients = 0;
-                    needsRefresh = false
+                    setInterval () ->
+                      activeClients = 0;
+                      needsRefresh = false
 
-                    for ip, client of buildServer.clients
-                      delta = Date.now() - client.lastSeen
+                      for ip, client of buildServer.clients
+                        delta = Date.now() - client.lastSeen
 
-                      if (delta > 2000)
-                        needsRefresh = true
-                        delete buildServer.clients[ip]
+                        if (delta > 2000)
+                          needsRefresh = true
+                          delete buildServer.clients[ip]
+                          console.log ""
+                          util.log "Client disconnected: #{client.ipAddress} - #{client.userAgent}"
+                        else if client.new
+                          needsRefresh = true
+                          activeClients++
+                          client.new = false
+
+                          console.log ""
+                          util.log "New client: #{client.ipAddress} - #{client.userAgent}"
+                        else
+                          activeClients++
+
+                      if needsRefresh
+                        util.log "Number of clients connected: #{activeClients}"
+                        prompt.refresh()
+
+                    , 1000
+
+
+                    if argv.watch
+                      steroidsCli.debug "Starting FS watcher"
+                      Watcher = require("./steroids/fs/watcher")
+
+                      pushAndPrompt = =>
                         console.log ""
-                        util.log "Client disconnected: #{client.ipAddress} - #{client.userAgent}"
-                      else if client.new
-                        needsRefresh = true
-                        activeClients++
-                        client.new = false
+                        util.log "File system change detected, pushing code to connected devices ..."
 
-                        console.log ""
-                        util.log "New client: #{client.ipAddress} - #{client.userAgent}"
+                        project = new Project
+                        project.push
+                          onSuccess: =>
+                            prompt.refresh()
+                          onFailure: =>
+                            prompt.refresh()
+
+                      if argv.watchExclude?
+                        excludePaths = steroidsCli.config.getCurrent().watch.exclude.concat(argv.watchExclude.split(","))
                       else
-                        activeClients++
+                        excludePaths = steroidsCli.config.getCurrent().watch.exclude
 
-                    if needsRefresh
-                      util.log "Number of clients connected: #{activeClients}"
-                      prompt.refresh()
+                      watcher = new Watcher
+                        excludePaths: excludePaths
+                        onCreate: pushAndPrompt
+                        onUpdate: pushAndPrompt
+                        onDelete: (file) =>
+                          steroidsCli.debug "Deleted watched file #{file}"
 
-                  , 1000
+                      watcher.watch("./app")
+                      watcher.watch("./www")
+                      watcher.watch("./config")
 
-
-                  if argv.watch
-                    steroidsCli.debug "Starting FS watcher"
-                    Watcher = require("./steroids/fs/watcher")
-
-                    pushAndPrompt = =>
-                      console.log ""
-                      util.log "File system change detected, pushing code to connected devices ..."
-
-                      project = new Project
-                      project.push
-                        onSuccess: =>
-                          prompt.refresh()
-                        onFailure: =>
-                          prompt.refresh()
-
-                    if argv.watchExclude?
-                      excludePaths = steroidsCli.config.getCurrent().watch.exclude.concat(argv.watchExclude.split(","))
-                    else
-                      excludePaths = steroidsCli.config.getCurrent().watch.exclude
-
-                    watcher = new Watcher
-                      excludePaths: excludePaths
-                      onCreate: pushAndPrompt
-                      onUpdate: pushAndPrompt
-                      onDelete: (file) =>
-                        steroidsCli.debug "Deleted watched file #{file}"
-
-                    watcher.watch("./app")
-                    watcher.watch("./www")
-                    watcher.watch("./config")
-
-                  prompt.connectLoop()
+                    prompt.connectLoop()
 
 
 

@@ -1,3 +1,63 @@
+## 2.7.33 (TODO)
+
+Changes:
+  - `$ steroids test karma` does not open a qr-code page with the `--simulator` flag enabled
+
+## 2.7.32 (2013-10-22)
+
+Karma integration for running unit tests on your device, usability improvements to `$ steroids update` and `$ steroids deploy`
+
+Features:
+  - Implemented `$ steroids test karma` for running unit tests on your device with the Karma test runner.
+
+Changes:
+  - `$ steroids update` prompts user to remove `myProject` from `www/components` if one has been generated.
+  - `$ steroids deploy` prints `share.appgyver.com` URL without `--debug`.
+
+## 2.7.31 (2013-10-21)
+
+Fixed `$ steroids update` to use `bower.json` from project root.
+
+Changes:
+  - Default `bower.json` in a new project moved to project root instead of `www/` folder.
+  - `$ steroids update` prompts user to move `bower.json` from previous default location
+
+## 2.7.30 (2013-10-17)
+
+Tab bar and navigation bar background images, iOS Simulator binary updated, default `steroids.js` version updated, Tizen bugfixes.
+
+Features:
+  - `config/application.coffee` now has support for tab bar and navigation bar background images.
+  - Default project's `steroids.js` file updated to v2.7.10
+  - iOS Simulator updated to v2.7.9
+
+Changes:
+  - Removed PushPlugin tag from default `www/config.ios.xml` (integrated PushPlugin was removed from Scanner).
+  - Default app icon included in `www/icons/steroids.png`.
+
+Bugfixes:
+  - `steroids connect --serve` now correctly serves `cordova.tizen.js` from a local file.
+  - `www/config.tizen.xml` default values fixed to prevent errors in Build Service.
+
+## 2.7.29 (2013-10-16)
+
+Fixed Linux-only crashing bug with `$ steroids connect`.
+
+## 2.7.28 (2013-10-15)
+
+Updated default projects' Steroids.js version to 2.7.9.
+
+## 2.7.27 (2013-10-15)
+
+Added Tizen support. Steroids Web Serve now supports Ripple.
+
+Changes:
+  - Removed deprecated hostfaking settings from `config/application.coffee`.
+  - Added support for Ripple: `steroids connect --serve --ripple`.
+  - Added Tizen Web Simulator, see `steroids usage`.
+  - Default projects' `www/index.html` now includes a meta viewport tag.
+  - Default projects have a `www/config.tizen.xml` file for configuring a Tizen Web App.
+
 ## 2.7.26 (2013-10-04)
 
 New projects have initial compatibility with [Cordova CLI](https://github.com/apache/cordova-cli), cleaned up `config/application.coffee`.
@@ -17,7 +77,7 @@ Bugfixes:
 
 ## 2.7.24 (2013-09-27)
 
-Default project template updated to use Steroids 2.7.8, improved test running, optional QR code display in console.
+Default project template updated to use Steroids.js v2.7.8, improved test running, optional QR code display in console.
 
 Changes:
   - Optional QR code display in the console with `--terminal-qrcode`

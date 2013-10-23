@@ -28,6 +28,7 @@
     hr {
       margin-bottom: 30px;
     }
+
   </style>
 </head>
 <body>
@@ -35,8 +36,6 @@
 
   <hr>
   <div id="qrcodeCanvas"></div>
-
-
 
   <div id="text">
     <p>The Steroids server is now running. The server will stay alive as long as the <br>
@@ -66,15 +65,12 @@
     <p>Happy hacking!</p>
   </div>
 
-
-
   <script>
     function getQueryStringByKey(key) {
       key = key.replace(/[*+?^$.\[\]{}()|\\\/]/g, "\\$&"); // escape RegEx meta chars
       var match = location.search.match(new RegExp("[?&]"+key+"=([^&]+)(&|$)"));
       return match && decodeURIComponent(match[1].replace(/\+/g, " "));
     }
-
 
     jQuery('#qrcodeCanvas').qrcode({
       width: 448,
